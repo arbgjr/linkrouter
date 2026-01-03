@@ -1,0 +1,13 @@
+{
+	"default": "edge",
+	"logPath": ".\\logs\\linkrouter.log",
+	"browsers": {
+		"edge": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+		"chrome": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+		"firefox": "C:\\Program Files\\Mozilla Firefox\\firefox.exe"
+	},
+	"rules": {
+		"ms-teams.exe": "chrome",
+		"WhatsApp.Root.exe": "edge"
+	}
+}

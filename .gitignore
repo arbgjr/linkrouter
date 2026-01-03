@@ -1,0 +1,23 @@
+# Build artifacts
+*.exe
+
+# Windows
+Thumbs.db
+desktop.ini
+*.lnk
+ehthumbs.db
+
+# Logs
+logs/
+*.log
+linkrouter_debug.log
+
+# Editor/IDE
+.vs/
+*.swp
+*.swo
+*~
+
+# Backup files
+*.bak
+*.backup
