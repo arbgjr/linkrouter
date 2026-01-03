@@ -126,12 +126,16 @@ switch ($operation) {
 			catch {
 				$tokenValid = $false
 			}
-		}
-		if (-not $tokenValid) {
-			$githubToken = Read-HostWithCancel "Insira seu GitHub Personal Access Token (com permissão para criar repositórios, ou deixe em branco para usar o CLI gh/git)" ""
+			if (-not $tokenValid) {
+				$githubToken = Read-HostWithCancel "Insira seu GitHub Personal Access Token (com permissão para criar repositórios, ou deixe em branco para usar o CLI gh/git)" ""
+			}
+			else {
+				Write-Host "TOKEN_GITHUB encontrado e válido. Usando token do ambiente." -ForegroundColor Green
+			}
 		}
 		else {
-			Write-Host "TOKEN_GITHUB encontrado e válido. Usando token do ambiente." -ForegroundColor Green
+			# Token vazio: não tenta autenticar, segue para gh CLI/manual
+			$githubToken = ""
 		}
 
 		$repoUrl = "https://github.com/$orgName/$repoName.git"
