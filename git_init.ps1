@@ -94,14 +94,18 @@ switch ($operation) {
 	'inicializar' {
 		$currentDir = (Get-Location).Path
 		$repoPath = Read-HostWithCancel "Insira o caminho para inicializar o repositório" $currentDir
+		if ([string]::IsNullOrWhiteSpace($repoPath)) {
+			$repoPath = $currentDir
+		}
 		$branchName = Read-HostWithCancel "Insira o nome da branch principal" "main"
 		Initialize-LocalGitRepository -RepoPath $repoPath -BranchName $branchName
 
 		# Sugerir nome do repo pelo nome da pasta
 
 		$repoFolder = Split-Path $repoPath -Leaf
+		$githubOrg = $env:GITHUB_ORG
 		$githubLogin = $env:GITHUB_USER
-		$orgDefault = if (![string]::IsNullOrWhiteSpace($githubLogin)) { $githubLogin } else { "" }
+		$orgDefault = if (![string]::IsNullOrWhiteSpace($githubOrg)) { $githubOrg } elseif (![string]::IsNullOrWhiteSpace($githubLogin)) { $githubLogin } else { "" }
 		$orgName = Read-HostWithCancel "Insira o nome da organização do repositório remoto (GitHub)" $orgDefault
 		$defaultRepoName = $repoFolder
 		if ($orgName -eq $defaultRepoName) {
