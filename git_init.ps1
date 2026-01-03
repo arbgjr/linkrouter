@@ -98,10 +98,16 @@ switch ($operation) {
 		Initialize-LocalGitRepository -RepoPath $repoPath -BranchName $branchName
 
 		# Sugerir nome do repo pelo nome da pasta
+
 		$repoFolder = Split-Path $repoPath -Leaf
-		$gitUser = git config user.name
-		$orgName = Read-HostWithCancel "Insira o nome da organização do repositório remoto (GitHub)" $gitUser
-		$repoName = Read-HostWithCancel "Insira o nome do repositório remoto (GitHub)" $repoFolder
+		$githubLogin = $env:GITHUB_USER
+		$orgDefault = if (![string]::IsNullOrWhiteSpace($githubLogin)) { $githubLogin } else { "" }
+		$orgName = Read-HostWithCancel "Insira o nome da organização do repositório remoto (GitHub)" $orgDefault
+		$defaultRepoName = $repoFolder
+		if ($orgName -eq $defaultRepoName) {
+			$defaultRepoName = "$repoFolder-repo"
+		}
+		$repoName = Read-HostWithCancel "Insira o nome do repositório remoto (GitHub)" $defaultRepoName
 
 
 		# Token GitHub (opcional, pode vir do ambiente)
