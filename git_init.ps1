@@ -1,7 +1,27 @@
+# =============================================================================
+# git_init.ps1 - Git Repository Initialization and Setup Script
+# =============================================================================
+# This script automates the process of initializing local Git repositories
+# and creating/linking them to remote GitHub repositories.
+#
+# Features:
+# - Interactive Git user configuration with defaults
+# - Local repository initialization or remote repository cloning
+# - Automatic remote repository creation via GitHub API or gh CLI
+# - Feature branch creation and push
+# - Support for optional fields (e.g., GitHub token)
+# - Robust error handling with fallback mechanisms
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Helper Functions
+# -----------------------------------------------------------------------------
+
 function Read-HostWithCancel {
 	param (
 		[string]$Prompt,
-		[string]$DefaultValue = ""
+		[string]$DefaultValue = "",
+		[switch]$AllowEmpty
 	)
 
 	$input = ""
@@ -20,6 +40,10 @@ function Read-HostWithCancel {
 		}
 		if ($showDefault -and [string]::IsNullOrWhiteSpace($input)) {
 			$input = $DefaultValue
+		}
+		# Se AllowEmpty estiver definido, aceitar entrada vazia
+		if ($AllowEmpty -and [string]::IsNullOrWhiteSpace($input)) {
+			break
 		}
 	} while ([string]::IsNullOrWhiteSpace($input))
 	return $input
@@ -84,14 +108,26 @@ function Create-FeatureBranchAndPush {
 	Write-Host "Branch de feature '$FeatureBranchName' criada e enviada para o repositório remoto '$RepoUrl'." -ForegroundColor Green
 }
 
+# -----------------------------------------------------------------------------
+# Main Script Execution
+# -----------------------------------------------------------------------------
+
 clear-host
 
-# Configuração do usuário Git
+# -----------------------------------------------------------------------------
+# Step 1: Configure Git User Settings
+# -----------------------------------------------------------------------------
 Set-GitConfiguration
 
+# -----------------------------------------------------------------------------
+# Step 2: Choose Operation (Initialize or Clone)
+# -----------------------------------------------------------------------------
 $operation = Read-HostWithCancel "Você deseja 'inicializar' um novo repositório local ou 'clonar' um repositório remoto? (inicializar/clonar)"
 switch ($operation) {
 	'inicializar' {
+		# -------------------------------------------------------------------------
+		# Initialize New Local Repository
+		# -------------------------------------------------------------------------
 		$currentDir = (Get-Location).Path
 		$repoPath = Read-HostWithCancel "Insira o caminho para inicializar o repositório" $currentDir
 		if ([string]::IsNullOrWhiteSpace($repoPath)) {
@@ -100,8 +136,10 @@ switch ($operation) {
 		$branchName = Read-HostWithCancel "Insira o nome da branch principal" "main"
 		Initialize-LocalGitRepository -RepoPath $repoPath -BranchName $branchName
 
-		# Sugerir nome do repo pelo nome da pasta
-
+		# -------------------------------------------------------------------------
+		# Configure Remote Repository Settings
+		# -------------------------------------------------------------------------
+		# Suggest repository name based on folder name
 		$repoFolder = Split-Path $repoPath -Leaf
 		$githubOrg = $env:GITHUB_ORG
 		$githubLogin = $env:GITHUB_USER
@@ -113,12 +151,13 @@ switch ($operation) {
 		}
 		$repoName = Read-HostWithCancel "Insira o nome do repositório remoto (GitHub)" $defaultRepoName
 
-
-		# Token GitHub (opcional, pode vir do ambiente)
+		# -------------------------------------------------------------------------
+		# GitHub Token Handling (Optional)
+		# -------------------------------------------------------------------------
 		$githubToken = $env:TOKEN_GITHUB
 		$tokenValid = $false
 		if (![string]::IsNullOrWhiteSpace($githubToken)) {
-			# Testa se o token é válido tentando acessar o endpoint do usuário
+			# Validate token by attempting to access GitHub user API endpoint
 			try {
 				$me = Invoke-RestMethod -Uri "https://api.github.com/user" -Headers @{Authorization = "token $githubToken" } -Method Get -ErrorAction Stop
 				$tokenValid = $true
@@ -127,22 +166,25 @@ switch ($operation) {
 				$tokenValid = $false
 			}
 			if (-not $tokenValid) {
-				$githubToken = Read-HostWithCancel "Insira seu GitHub Personal Access Token (com permissão para criar repositórios, ou deixe em branco para usar o CLI gh/git)" ""
+				$githubToken = Read-HostWithCancel "Insira seu GitHub Personal Access Token (com permissão para criar repositórios, ou deixe em branco para usar o CLI gh/git)" "" -AllowEmpty
 			}
 			else {
 				Write-Host "TOKEN_GITHUB encontrado e válido. Usando token do ambiente." -ForegroundColor Green
 			}
 		}
 		else {
-			# Token vazio: não tenta autenticar, segue para gh CLI/manual
+			# No token in environment: proceed with gh CLI or manual creation
 			$githubToken = ""
 		}
 
+		# -------------------------------------------------------------------------
+		# Create Remote Repository
+		# -------------------------------------------------------------------------
 		$repoUrl = "https://github.com/$orgName/$repoName.git"
 		$repoExists = $false
 
 		if ($githubToken) {
-			# Verifica se repo existe via API
+			# Verify if repository exists via GitHub API
 			$repoApiUrl = "https://api.github.com/repos/$orgName/$repoName"
 			try {
 				$resp = Invoke-RestMethod -Uri $repoApiUrl -Headers @{Authorization = "token $githubToken" } -Method Get -ErrorAction Stop
@@ -169,7 +211,7 @@ switch ($operation) {
 			}
 		}
 		else {
-			# Sem token: tenta com gh CLI
+			# Fallback: Try GitHub CLI (gh) if no token available
 			Write-Host "Tentando criar repositório remoto usando o GitHub CLI (gh)..." -ForegroundColor Yellow
 			$ghExists = (Get-Command gh -ErrorAction SilentlyContinue) -ne $null
 			if ($ghExists) {
@@ -188,10 +230,16 @@ switch ($operation) {
 			}
 		}
 
+		# -------------------------------------------------------------------------
+		# Create and Push Feature Branch
+		# -------------------------------------------------------------------------
 		$featureBranchName = Read-HostWithCancel "Insira o nome da branch de feature para suas alterações" $repoName
 		Create-FeatureBranchAndPush -FeatureBranchName $featureBranchName -RepoUrl $repoUrl
 	}
 	'clonar' {
+		# -------------------------------------------------------------------------
+		# Clone Existing Remote Repository
+		# -------------------------------------------------------------------------
 		$repoUrl = Read-HostWithCancel "Insira a URL do repositório remoto"
 		$clonePath = Read-HostWithCancel "Insira o caminho onde o repositório deve ser clonado"
 		Clone-GitRepository -RepoUrl $repoUrl -ClonePath $clonePath
