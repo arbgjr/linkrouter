@@ -41,7 +41,7 @@ function Read-HostWithCancel {
 		if ($showDefault -and [string]::IsNullOrWhiteSpace($input)) {
 			$input = $DefaultValue
 		}
-		# Se AllowEmpty estiver definido, aceitar entrada vazia
+		# Se AllowEmpty estiver definido, aceita entrada vazia
 		if ($AllowEmpty -and [string]::IsNullOrWhiteSpace($input)) {
 			break
 		}
@@ -139,7 +139,7 @@ switch ($operation) {
 		# -------------------------------------------------------------------------
 		# Configure Remote Repository Settings
 		# -------------------------------------------------------------------------
-		# Suggest repository name based on folder name
+		# Sugerir nome do repositório baseado no nome da pasta
 		$repoFolder = Split-Path $repoPath -Leaf
 		$githubOrg = $env:GITHUB_ORG
 		$githubLogin = $env:GITHUB_USER
@@ -157,7 +157,7 @@ switch ($operation) {
 		$githubToken = $env:TOKEN_GITHUB
 		$tokenValid = $false
 		if (![string]::IsNullOrWhiteSpace($githubToken)) {
-			# Validate token by attempting to access GitHub user API endpoint
+			# Valida o token tentando acessar o endpoint do usuário da API do GitHub
 			try {
 				$me = Invoke-RestMethod -Uri "https://api.github.com/user" -Headers @{Authorization = "token $githubToken" } -Method Get -ErrorAction Stop
 				$tokenValid = $true
@@ -173,7 +173,7 @@ switch ($operation) {
 			}
 		}
 		else {
-			# No token in environment: proceed with gh CLI or manual creation
+			# Sem token no ambiente: prossegue com gh CLI ou criação manual
 			$githubToken = ""
 		}
 
@@ -184,7 +184,7 @@ switch ($operation) {
 		$repoExists = $false
 
 		if ($githubToken) {
-			# Verify if repository exists via GitHub API
+			# Verifica se o repositório existe via API do GitHub
 			$repoApiUrl = "https://api.github.com/repos/$orgName/$repoName"
 			try {
 				$resp = Invoke-RestMethod -Uri $repoApiUrl -Headers @{Authorization = "token $githubToken" } -Method Get -ErrorAction Stop
@@ -211,7 +211,7 @@ switch ($operation) {
 			}
 		}
 		else {
-			# Fallback: Try GitHub CLI (gh) if no token available
+			# Fallback: Tenta GitHub CLI (gh) se nenhum token disponível
 			Write-Host "Tentando criar repositório remoto usando o GitHub CLI (gh)..." -ForegroundColor Yellow
 			$ghExists = (Get-Command gh -ErrorAction SilentlyContinue) -ne $null
 			if ($ghExists) {
